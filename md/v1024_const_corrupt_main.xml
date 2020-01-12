@@ -9,7 +9,7 @@
           <cue_is_complete cue="md.Setup.GameStart"/>
           <!-- Case 2: Load from no-mod save -->
           <check_all>
-            <cue_is_complete cue="md.Setup.GameStart"/>
+            <cue_is_complete cue="md.Setup.Start"/>
             <check_value value="not (global.$v1024_flags_constCorru_Initialized?)"/>
           </check_all>
         </check_any>
