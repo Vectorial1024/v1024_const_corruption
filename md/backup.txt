@@ -1,0 +1,25 @@
+<cue name="Start" checkinterval="10s" checktime="1s">
+      <conditions>
+        <event_cue_signalled cue="md.Setup.Start" />
+        <cue_is_complete cue="md.Setup.GameStart"/>
+        <check_value value="player.galaxy.macro.ismacro.{macro.xu_ep2_universe_macro}"/>
+        <!-- <check_value value="false" comment="Remove to enable"/> -->
+      </conditions>
+      <cues>
+        <cue name="PlacementLoop">
+          <actions>
+            
+          </actions>
+
+          <cues>
+            <cue name="PlacementLoop_Reset">
+              <delay exact="10s"/>
+              <!--delay exact="1min"/-->
+              <actions>
+                <reset_cue cue="PlacementLoop"/>
+              </actions>
+            </cue>
+          </cues>
+        </cue>
+      </cues>
+    </cue>

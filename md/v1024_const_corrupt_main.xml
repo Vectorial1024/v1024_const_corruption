@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<mdscript name="V1024_ConstantCurruption" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
+  <cues>
+    <cue name="Kickstarter" checkinterval="10s" checktime="1s">
+      <conditions>
+        <!-- Consider the following cases: -->
+        <check_any>
+          <!-- Case 1: Fresh load from gamestart -->
+          <cue_is_complete cue="md.Setup.GameStart"/>
+          <!-- Case 2: Load from no-mod save -->
+          <check_all>
+            <cue_is_complete cue="md.Setup.GameStart"/>
+            <check_value value="not (global.$v1024_flags_constCorru_Initialized?)"/>
+          </check_all>
+        </check_any>
+        <!--
+        <event_cue_signalled cue="md.Setup.Start" />
+        <cue_is_complete cue="md.Setup.GameStart"/>
+        <check_value value="player.galaxy.macro.ismacro.{macro.xu_ep2_universe_macro}"/>
+        -->
+        <!-- <check_value value="false" comment="Remove to enable"/> -->
+      </conditions>
+      <actions>
+        <set_value name="global.$v1024_flags_constCorru_Initialized" value="true"/>
+        <show_help custom="'Initilized.'" position="1" duration="5s" chance="0" />
+        <signal_cue_instantly cue="Loop_InitialDelay" />
+      </actions>
+    </cue>
+    <cue name="Loop_InitialDelay" instantiate="true">
+      <conditions>
+        <event_cue_signalled />
+      </conditions>
+      <delay exact="30s"/>
+      <actions>
+        <do_if value="player.age lt 12h">
+          <signal_cue_instantly cue="Loop_InitialDelay" />
+        </do_if>
+        <do_else>
+          <signal_cue_instantly cue="Loop_MainBody" />
+          <show_help custom="'Initial delay complete.'" position="1" duration="2s" chance="0" />
+        </do_else>
+      </actions>
+    </cue>
+    <cue name="Loop_MainBody" instantiate="true">
+      <conditions>
+        <event_cue_signalled />
+      </conditions>
+      <actions>
+        <show_help custom="'Main body.'" position="1" duration="5s" chance="0" />
+
+        <!-- Count and calculate black market trader percentage -->
+        <show_help custom="'Beginning to check'" position="1" duration="2s" chance="0" />
+
+        <!-- Map: Sector -> Placeable stations -->
+        <set_value name="$sectorMap" exact="table[]" />
+        <set_value name="$blackMarketeerCoverage" exact="table[]"/>
+
+        <!-- Find sectors. -->
+        <find_sector name="$Sectors" space="player.galaxy" multiple="true">
+          <match owner="faction.xenon" negate="true" />
+        </find_sector>
+
+        <!-- For each sector, count and tally. -->
+        <do_all exact="$Sectors.count" counter="$SectorCounter">
+          <set_value name="$Sector" exact="$Sectors.{$SectorCounter}" />
+
+          <!-- Find all stations. -->
+          <find_station name="$PossibleStations" functional="true" piratebase="false" space="$Sector" multiple="true">
+            <match_products wares="[ware.majadust, ware.spacefuel, ware.spaceweed]" negate="true" />
+            <match owner="[faction.player, faction.xenon, faction.khaak]" negate="true" />
+          </find_station>
+
+          <!-- Add stations which does not have shady guys to the mapping. -->
+          <set_value name="$sectorMap.{$Sector}" exact="[]" />
+          <do_all exact="$PossibleStations.count" counter="$StationCounter" reverse="true">
+            <set_value name="$Station" exact="$PossibleStations.{$StationCounter}" />
+            <do_if value="$Station.shadyguy">
+              <continue />
+            </do_if>
+            <!-- This station does not have a shadyguy. -->
+            <append_to_list name="$sectorMap.{$Sector}" exact="$Station" />
+          </do_all>
+
+          <!-- Calculate black market trader coverage for individual sectors, should be from 0 to 1 -->
+          <set_value name="$stationCount" exact="$PossibleStations.count" />
+          <set_value name="$vacantCount" exact="$sectorMap.{$Sector}.count" />
+          <do_if value="$stationCount == 0">
+            <set_value name="$blackMarketeerCoverage.{$Sector}" exact="1"/>
+          </do_if>
+          <do_else>
+            <set_value name="$blackMarketeerCoverage.{$Sector}" exact="($stationCount - $vacantCount) * 1.0 / $stationCount"/>
+          </do_else>
+        </do_all>
+
+        <!-- All tallying complete. -->
+        <!-- Check black market coverage levels. -->
+        <do_if value="not global.$v1024_cc_blackMarketLV?">
+          <set_value name="global.$v1024_cc_blackMarketLV" exact="0"/>
+        </do_if>
+        <set_value name="$targetCoverage" exact="global.$v1024_cc_blackMarketLV * (0.05)"/>
+        <show_help custom="$targetCoverage + ' target coverage.'" position="1" duration="2s" chance="0" />
+
+        <set_value name="$someSectorsBelowLV" exact="false" />
+        <set_value name="$Keys" exact="$blackMarketeerCoverage.keys.list" />
+        <set_value name="$possibleSectors" exact="[]" />
+        <do_all exact="$Keys.count" counter="$i">
+          <do_if value="$sectorMap.{$Keys.{$i}}.count == 0">
+            <!-- No station. Skip. -->
+            <continue/>
+          </do_if>
+          <do_if value="$blackMarketeerCoverage.{$Keys.{$i}} lt $targetCoverage">
+            <!-- Sector coverage below target coverage -->
+            <set_value name="$someSectorsBelowLV" exact="true" />
+            <append_to_list name="$possibleSectors" exact="$Keys.{$i}" />
+          </do_if>
+        </do_all>
+        <remove_value name="$Keys" />
+
+        <do_if value="$someSectorsBelowLV">
+          <!-- Find a random sector, and plant a black trader at a random station there. -->
+          <set_value name="$targettedSector" exact="$possibleSectors.random" />
+          <show_help custom="$possibleSectors + ' check sector ' + $targettedSector.name" position="1" duration="2s" chance="0"/>
+          <set_value name="$SelectedStation" exact="$sectorMap.{$targettedSector}.random" />
+          <show_help custom="$SelectedStation.name + ' spawning shadyguy at.' + $targettedSector.name" position="1" duration="2s" chance="0"/>
+
+          <!-- Actually places a black market trader at a certain station. -->
+
+          <!-- Select owner -->
+          <do_any>
+            <set_value name="$ShadyGuyOwner" exact="faction.scaleplate" weight="70" />
+            <set_value name="$ShadyGuyOwner" exact="faction.hatikvah" weight="25" />
+            <set_value name="$ShadyGuyOwner" exact="$SelectedStation.owner" weight="5" />
+          </do_any>
+
+          <!-- create an actor in the control room of the station -->
+          <create_cue_actor name="$ShadyGuy" cue="this">
+            <select tags="tag.shadyguy" />
+            <owner exact="$ShadyGuyOwner" />
+          </create_cue_actor>
+          <assign_control_entity actor="$ShadyGuy" object="$SelectedStation" post="controlpost.shadyguy"/>
+          <debug_text text="'Shady Guy ' + $ShadyGuy.name + ' ({' + $ShadyGuy + '}) created'" chance="$DebugChance" />
+          <add_actor_to_room actor="$ShadyGuy" room="$SelectedStation.controlroom" result="$ShadyGuyPlaced" />
+
+          <!-- Report results -->
+          <do_if value="$ShadyGuyPlaced">
+            <!-- Add shady guy to the map, with a reference station they have been added to -->
+            <set_value name="md.$ShadyGuyMap.{$ShadyGuy}" exact="$SelectedStation" />
+            <!-- Also add the station to the tracked station group for later independent use (tracking whether or not it has been destroyed, tracking whether or not it is already used for a shady dealer) -->
+            <show_help custom="'Successful placement!'" position="1" duration="2s" chance="0"/>
+            <add_to_group groupname="md.NPC_ShadyGuy.GameStarted.$TrackedStationGroup" object="$SelectedStation" />
+            <signal_cue_instantly cue="md.NPC_Itemtrader.OnPlatformPopulation_Itemtrader" param="[$ShadyGuy]" />
+          </do_if>
+
+          <remove_value name="$targettedSector" />
+          <remove_value name="$SelectedStation" />
+
+          <set_value name="global.$v1024_cc_timeout" exact="global.$v1024_cc_blackMarketLV * 2" />
+        </do_if>
+        <do_else>
+          <!-- All sectors have reached the target. Check for timeout. -->
+          <do_if value="not global.$v1024_cc_timeout?">
+            <set_value name="global.$v1024_cc_timeout" exact="global.$v1024_cc_blackMarketLV * 2" />
+          </do_if>
+          <!-- Terminal coverage at 0.40 -->
+          <do_if value="global.$v1024_cc_blackMarketLV lt 0.4">
+            <!-- Decrement by 1. -->
+            <set_value name="global.$v1024_cc_timeout" exact="global.$v1024_cc_timeout - 1" />
+            <do_if value="global.$v1024_cc_timeout == 0">
+              <!-- Galaxy has maintained coverage long enough. -->
+              <!-- Increment coverage. -->
+              <set_value name="global.$v1024_cc_blackMarketLV" exact="global.$v1024_cc_blackMarketLV + 1" />
+              <set_value name="global.$v1024_cc_timeout" exact="global.$v1024_cc_blackMarketLV * 2" />
+              <show_help custom="global.$v1024_cc_blackMarketLV + ' new target level.'" position="1" duration="2s" chance="0"/>
+            </do_if>
+            <do_else>
+              <!-- Galaxy coverage maintain not long enough. -->
+              <show_help custom="'waiting next.'" position="1" duration="2s" chance="0"/>
+            </do_else>
+          </do_if>
+        </do_else>
+
+        <remove_value name="$sectorMap" />
+        <remove_value name="$blackMarketeerCoverage" />
+
+        <signal_cue_instantly cue="Loop_Iterator" />
+      </actions>
+    </cue>
+    <cue name="Loop_Iterator" instantiate="true">
+      <conditions>
+        <event_cue_signalled />
+      </conditions>
+      <delay exact="30min"/>
+      <actions>
+        <signal_cue_instantly cue="Loop_MainBody" />
+        <show_help custom="'Cooldown complete.'" position="1" duration="2s" chance="0" />
+      </actions>
+    </cue>
+  </cues>
+</mdscript>
