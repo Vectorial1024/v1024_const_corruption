@@ -6,10 +6,10 @@
         <!-- Consider the following cases: -->
         <check_any>
           <!-- Case 1: Fresh load from gamestart -->
-          <cue_is_complete cue="md.Setup.GameStart"/>
+          <event_cue_signalled cue="md.Setup.GameStart"/>
           <!-- Case 2: Load from no-mod save -->
           <check_all>
-            <cue_is_complete cue="md.Setup.Start"/>
+            <event_cue_signalled cue="md.Setup.Start"/>
             <check_value value="not (global.$v1024_flags_constCorru_Initialized?)"/>
           </check_all>
         </check_any>
@@ -153,6 +153,8 @@
 
           <remove_value name="$targettedSector" />
           <remove_value name="$SelectedStation" />
+
+          <remove_all_cue_actors cue="this" />
 
           <set_value name="global.$v1024_cc_timeout" exact="global.$v1024_cc_blackMarketLV * 2" />
         </do_if>
