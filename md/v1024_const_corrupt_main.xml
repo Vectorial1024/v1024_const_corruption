@@ -124,37 +124,8 @@
           <show_help custom="$SelectedStation.name + ' spawning shadyguy at.' + $targettedSector.name" position="1" duration="2s" chance="0"/>
 
           <!-- Actually places a black market trader at a certain station. -->
-
-          <!-- Select owner -->
-          <do_any>
-            <set_value name="$ShadyGuyOwner" exact="faction.scaleplate" weight="70" />
-            <set_value name="$ShadyGuyOwner" exact="faction.hatikvah" weight="25" />
-            <set_value name="$ShadyGuyOwner" exact="$SelectedStation.owner" weight="5" />
-          </do_any>
-
-          <!-- create an actor in the control room of the station -->
-          <create_cue_actor name="$ShadyGuy" cue="this">
-            <select tags="tag.shadyguy" />
-            <owner exact="$ShadyGuyOwner" />
-          </create_cue_actor>
-          <assign_control_entity actor="$ShadyGuy" object="$SelectedStation" post="controlpost.shadyguy"/>
-          <debug_text text="'Shady Guy ' + $ShadyGuy.name + ' ({' + $ShadyGuy + '}) created'" chance="$DebugChance" />
-          <add_actor_to_room actor="$ShadyGuy" room="$SelectedStation.controlroom" result="$ShadyGuyPlaced" />
-
-          <!-- Report results -->
-          <do_if value="$ShadyGuyPlaced">
-            <!-- Add shady guy to the map, with a reference station they have been added to -->
-            <set_value name="md.$ShadyGuyMap.{$ShadyGuy}" exact="$SelectedStation" />
-            <!-- Also add the station to the tracked station group for later independent use (tracking whether or not it has been destroyed, tracking whether or not it is already used for a shady dealer) -->
-            <show_help custom="'Successful placement!'" position="1" duration="2s" chance="0"/>
-            <add_to_group groupname="md.NPC_ShadyGuy.GameStarted.$TrackedStationGroup" object="$SelectedStation" />
-            <signal_cue_instantly cue="md.NPC_Itemtrader.OnPlatformPopulation_Itemtrader" param="[$ShadyGuy]" />
-          </do_if>
-
-          <remove_value name="$targettedSector" />
-          <remove_value name="$SelectedStation" />
-
-          <remove_all_cue_actors cue="this" />
+          <!-- Uses the vanilla spawning script to ensure script correctness. -->
+          <signal_cue_instantly cue="md.NPC_ShadyGuy.GameStarted.AddShadyGuys" param="[$SelectedStation]" />
 
           <set_value name="global.$v1024_cc_timeout" exact="global.$v1024_cc_blackMarketLV * 2" />
         </do_if>
