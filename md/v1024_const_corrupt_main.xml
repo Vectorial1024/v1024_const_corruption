@@ -30,9 +30,9 @@
       <conditions>
         <event_cue_signalled />
       </conditions>
-      <delay exact="30s"/>
+      <delay exact="5min"/>
       <actions>
-        <do_if value="player.age lt 12h">
+        <do_if value="player.age lt 8hr">
           <signal_cue_instantly cue="Loop_InitialDelay" />
         </do_if>
         <do_else>
@@ -135,9 +135,10 @@
           <do_if value="not global.$v1024_cc_timeout?">
             <set_value name="global.$v1024_cc_timeout" exact="global.$v1024_cc_blackMarketLV * 2" />
           </do_if>
-          <!-- Terminal coverage at 0.40 -->
-          <!-- This means a black market level of 8: 8 * 5% = 40% -->
-          <do_if value="global.$v1024_cc_blackMarketLV lt 8">
+          <!-- Terminal coverage at 0.25 -->
+          <!-- 25% of all stations is already very significant; 40% would be too much. (Not that anyone would have the time to check every station... right?) -->
+          <!-- This means a black market level of 5: 5 * 5% = 25% -->
+          <do_if value="global.$v1024_cc_blackMarketLV lt 5">
             <!-- Decrement by 1. -->
             <set_value name="global.$v1024_cc_timeout" exact="global.$v1024_cc_timeout - 1" />
             <do_if value="global.$v1024_cc_timeout == 0">
@@ -164,7 +165,7 @@
       <conditions>
         <event_cue_signalled />
       </conditions>
-      <delay exact="30min"/>
+      <delay exact="1hr"/>
       <actions>
         <signal_cue_instantly cue="Loop_MainBody" />
         <show_help custom="'Cooldown complete.'" position="1" duration="2s" chance="0" />
