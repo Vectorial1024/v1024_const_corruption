@@ -85,6 +85,7 @@
           <set_value name="$stationCount" exact="$PossibleStations.count" />
           <set_value name="$vacantCount" exact="$sectorMap.{$Sector}.count" />
           <do_if value="$stationCount == 0">
+            <!-- Set to full coverage to avoid blocking other sectors due to "incomplete coverage" -->
             <set_value name="$blackMarketeerCoverage.{$Sector}" exact="1"/>
           </do_if>
           <do_else>
@@ -135,7 +136,8 @@
             <set_value name="global.$v1024_cc_timeout" exact="global.$v1024_cc_blackMarketLV * 2" />
           </do_if>
           <!-- Terminal coverage at 0.40 -->
-          <do_if value="global.$v1024_cc_blackMarketLV lt 0.4">
+          <!-- This means a black market level of 8: 8 * 5% = 40% -->
+          <do_if value="global.$v1024_cc_blackMarketLV lt 8">
             <!-- Decrement by 1. -->
             <set_value name="global.$v1024_cc_timeout" exact="global.$v1024_cc_timeout - 1" />
             <do_if value="global.$v1024_cc_timeout == 0">
